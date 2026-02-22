@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keuangan Pernikahan</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #e4e8fc, #bbbff8);
+    padding: 30px;
+}
+
+.container {
+    max-width: 950px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+h2 {
+    text-align: center;
+    color:blue;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+input, select {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+input:focus, select:focus {
+    border-color: #e91e63;
+    outline: none;
+    box-shadow: 0 0 5px rgba(233, 30, 99, 0.4);
+}
+
+button {
+    padding: 10px;
+    background: linear-gradient(45deg, #e91e63, #c2185b);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 500;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    overflow: hidden;
+    border-radius: 15px;
+}
+
+th {
+    background: linear-gradient(45deg, #f06292, #e91e63);
+    color: white;
+    padding: 12px;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px;
+    background: #fff;
+}
+
+tr:nth-child(even) td {
+    background: #fce4ec;
+}
+
+tr:hover td {
+    background: #f8bbd0;
+    transition: 0.3s;
+}
+
+.summary {
+    margin-top: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8bbd0, #fce4ec);
+    border-radius: 15px;
+    font-size: 16px;
+    line-height: 1.8;
+    box-shadow: inset 0 5px 10px rgba(0,0,0,0.05);
+}
+
+.summary span {
+    font-weight: bold;
+    color: #c2185b;
+}
+
+button[style*="red"] {
+    background: linear-gradient(45deg, #e53935, #b71c1c) !important;
+}
+
+button[style*="red"]:hover {
+    box-shadow: 0 5px 15px rgba(183, 28, 28, 0.4);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media(max-width: 600px){
+    body {
+        padding: 10px;
+    }
+    .container {
+        padding: 20px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>💍 Keuangan Pernikahan ILHAM & PRIMA</h2>
+
+<form id="formKeuangan">
+    <input type="hidden" id="editIndex">
+
+    <input type="date" id="tanggal" required>
+    <input type="text" id="keterangan" placeholder="Keterangan" required>
+
+    <select id="jenis">
+        <option value="Pemasukan">Pemasukan</option>
+        <option value="Pengeluaran">Pengeluaran</option>
+    </select>
+
+    <input type="text" id="jumlah" placeholder="Jumlah" required>
+
+    <button type="submit">Simpan</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Tanggal</th>
+            <th>Keterangan</th>
+            <th>Jenis</th>
+            <th>Jumlah</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="tabelData"></tbody>
+</table>
+
+<div class="summary">
+    Total Pemasukan: Rp <span id="totalMasuk">0</span><br>
+    Total Pengeluaran: Rp <span id="totalKeluar">0</span><br>
+    Saldo Akhir: Rp <span id="saldo">0</span>
+</div>
+
+</div>
+
+<script>
+
+let dataKeuangan = [];
+
+// ================= FORMAT RUPIAH SAAT DIKETIK =================
+document.getElementById("jumlah").addEventListener("keyup", function() {
+    this.value = formatRupiah(this.value, "Rp ");
+});
+
+function formatRupiah(angka, prefix) {
+    let number_string = angka.replace(/[^,\d]/g, '').toString(),
+        split = number_string.split(','),
+        sisa = split[0].length % 3,
+        rupiah = split[0].substr(0, sisa),
+        ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+    if (ribuan) {
+        let separator = sisa ? '.' : '';
+        rupiah += separator + ribuan.join('.');
+    }
+
+    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+    return prefix == undefined ? rupiah : (rupiah ? prefix + rupiah : '');
+}
+
+// ================= SUBMIT FORM =================
+document.getElementById("formKeuangan").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let tanggal = document.getElementById("tanggal").value;
+    let keterangan = document.getElementById("keterangan").value;
+    let jenis = document.getElementById("jenis").value;
+
+    // Ambil angka asli (hapus Rp dan titik)
+    let jumlahInput = document.getElementById("jumlah").value.replace(/[^0-9]/g, '');
+    let jumlah = parseInt(jumlahInput);
+
+    let editIndex = document.getElementById("editIndex").value;
+
+    let data = { tanggal, keterangan, jenis, jumlah };
+
+    if(editIndex === "") {
+        dataKeuangan.push(data);
+    } else {
+        dataKeuangan[editIndex] = data;
+        document.getElementById("editIndex").value = "";
+    }
+
+    document.getElementById("formKeuangan").reset();
+    tampilkanData();
+});
+
+// ================= TAMPILKAN DATA =================
+function tampilkanData(){
+    let tabel = document.getElementById("tabelData");
+    tabel.innerHTML = "";
+
+    let totalMasuk = 0;
+    let totalKeluar = 0;
+
+    dataKeuangan.forEach((item, index) => {
+
+        let row = `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.tanggal}</td>
+            <td>${item.keterangan}</td>
+            <td>${item.jenis}</td>
+            <td>Rp ${item.jumlah.toLocaleString("id-ID")}</td>
+            <td>
+                <button onclick="editData(${index})">Edit</button>
+                <button onclick="hapusData(${index})" style="background:red;">Hapus</button>
+            </td>
+        </tr>
+        `;
+
+        tabel.innerHTML += row;
+
+        if(item.jenis === "Pemasukan"){
+            totalMasuk += item.jumlah;
+        } else {
+            totalKeluar += item.jumlah;
+        }
+    });
+
+    document.getElementById("totalMasuk").innerText = totalMasuk.toLocaleString("id-ID");
+    document.getElementById("totalKeluar").innerText = totalKeluar.toLocaleString("id-ID");
+    document.getElementById("saldo").innerText = (totalMasuk - totalKeluar).toLocaleString("id-ID");
+}
+
+// ================= EDIT =================
+function editData(index){
+    let data = dataKeuangan[index];
+
+    document.getElementById("tanggal").value = data.tanggal;
+    document.getElementById("keterangan").value = data.keterangan;
+    document.getElementById("jenis").value = data.jenis;
+    document.getElementById("jumlah").value = formatRupiah(data.jumlah.toString(), "Rp ");
+    document.getElementById("editIndex").value = index;
+}
+
+// ================= HAPUS =================
+function hapusData(index){
+    if(confirm("Yakin ingin menghapus data?")){
+        dataKeuangan.splice(index,1);
+        tampilkanData();
+    }
+}
+
+</script>
+
+</body>
+</html>
